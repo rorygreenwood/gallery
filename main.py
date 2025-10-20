@@ -7,7 +7,9 @@ import sys
 import os
 import random
 import argparse  # Added for monitor selection
+import logging
 
+logger = logging.getLogger()
 # --- Configuration ---
 VIEW_TIME = 5
 FADE_STEPS = 90  # Increased for smoother fade
@@ -28,9 +30,9 @@ def run_slideshow(folder_path, monitor_index):
     """Displays a randomized slideshow using a robust Toplevel window."""
     # 1. Get Monitor Information
     monitors = get_monitors()
-    print("🔎 Detecting Monitors...")
+    logger.info("🔎 Detecting Monitors...")
     for i, m in enumerate(monitors):
-        print(f"  Monitor {i}: {m}")
+        logger.info(f"  Monitor {i}: {m}")
 
     if monitor_index is None:
         # Auto-detect secondary monitor if no index is provided
@@ -39,15 +41,13 @@ def run_slideshow(folder_path, monitor_index):
         try:
             target_monitor = monitors[monitor_index]
         except IndexError:
-            print(f"❌ Error: Monitor index {monitor_index} is invalid. Max index is {len(monitors) - 1}.")
+            logger.info('invalid monitor index')
             return
-
-    print(f"✅ Using Monitor: {target_monitor}")
 
     # 2. Get and validate image files
     all_images = get_image_files(folder_path)
     if not all_images:
-        print(f"❌ Error: No supported images found in '{folder_path}'")
+        logger.info(f"Error: No supported images found in '{folder_path}'")
         return
 
     # 3. Create the main, INVISIBLE root window
@@ -98,9 +98,9 @@ def run_slideshow(folder_path, monitor_index):
             tk_image = ImageTk.PhotoImage(resized)
             image_label.config(image=tk_image)
             image_label.image = tk_image
-            print(f"Displaying: {os.path.basename(image_path)}")
+            logger.info(f"Displaying: {os.path.basename(image_path)}")
         except Exception as e:
-            print(f"⚠️ Could not load image {os.path.basename(image_path)}: {e}")
+            logger.info(f"⚠️ Could not load image {os.path.basename(image_path)}: {e}")
             load_next_image()
 
     def fade(step, direction):
@@ -127,7 +127,7 @@ def run_slideshow(folder_path, monitor_index):
     display_window.bind("<Escape>", close_window)
     image_label.bind("<Button-1>", close_window)
 
-    print(f"✅ Found {len(all_images)} images. Starting slideshow...")
+    logger.info(f"Found {len(all_images)} images. Starting slideshow...")
     start()
     root.mainloop()
 
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not os.path.isdir(args.folder):
-        print(f"❌ Error: Folder not found at '{args.folder}'")
+        logger.info(f"Error: Folder not found at '{args.folder}'")
         sys.exit(1)
 
     run_slideshow(args.folder, args.monitor)
