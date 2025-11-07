@@ -74,23 +74,58 @@ def run_slideshow(folder_path, monitor_index):
         if not shuffled_deck:
             shuffled_deck = all_images.copy()
             random.shuffle(shuffled_deck)
-        image_path = shuffled_deck.pop()
+
+        # Pop a filename and create the full path
+        image_name = shuffled_deck.pop()
+        image_path = os.path.join(folder_path, image_name)
+
         try:
-            original = Image.open(LOCAL_CACHE + image_path)
-            img_aspect = original.width / original.height
+            original = Image.open(image_path)
+
+            img_w, img_h = original.width, original.height
+            img_aspect = img_w / img_h
             screen_aspect = m_width / m_height
+
+            # This is the new "cover" logic
             if img_aspect > screen_aspect:
-                new_w, new_h = m_width, int(m_width / img_aspect)
+                # Image is WIDER than the screen (e.g., 16:9 image on 4:3 screen)
+                # Scale based on height, so the width overflows
+                new_h = m_height
+                new_w = int(new_h * img_aspect)
+
+                resized = original.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+                # Pick a random horizontal (x) position to crop from
+                max_x = new_w - m_width
+                crop_x = random.randint(0, max_x)
+
+                # Crop a screen-sized portion
+                cropped = resized.crop((crop_x, 0, crop_x + m_width, m_height))
+
             else:
-                new_w, new_h = int(m_height * img_aspect), m_height
-            resized = original.resize((new_w, new_h), Image.Resampling.LANCZOS)
-            tk_image = ImageTk.PhotoImage(resized)
+                # Image is TALLER than the screen (e.g., 9:16 image on 16:9 screen)
+                # Scale based on width, so the height overflows
+                new_w = m_width
+                new_h = int(new_w / img_aspect)
+
+                resized = original.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+                # Pick a random vertical (y) position to crop from
+                max_y = new_h - m_height
+                crop_y = random.randint(0, max_y)
+
+                # Crop a screen-sized portion
+                cropped = resized.crop((0, crop_y, m_width, crop_y + m_height))
+
+            tk_image = ImageTk.PhotoImage(cropped)
             image_label.config(image=tk_image)
             image_label.image = tk_image
-            logger.info(f"Displaying: {os.path.basename(image_path)}")
+            logger.info(f"Displaying: {image_name}")
+
         except Exception as e:
-            logger.info(f"Could not load image {os.path.basename(image_path)}: {e}")
-            load_next_image()
+            logger.info(f"Could not load image {image_name}: {e}")
+            # Use .after() to avoid deep recursion on multiple bad images
+            display_window.after(100, load_next_image)
 
     def fade(step, direction):
         alpha = (FADE_STEPS - step) / FADE_STEPS if direction == 'out' else step / FADE_STEPS

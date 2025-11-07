@@ -8,6 +8,11 @@ LOCAL_CACHE_DIR = './local_cache'
 if not os.path.exists(LOCAL_CACHE_DIR):
     os.makedirs(LOCAL_CACHE_DIR)
 
+# Clear Cache
+if os.listdir(LOCAL_CACHE_DIR):
+    for item in os.listdir(LOCAL_CACHE_DIR):
+        os.remove(os.path.join(LOCAL_CACHE_DIR, item))
+
 def fetch_playlist():
     try:
         response = requests.get(SERVER_URL + '/api/playlist')
