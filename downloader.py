@@ -2,7 +2,7 @@ import os
 
 import requests
 
-SERVER_IP = '192.168.1.169' # <-- Put Rasp Pi 5 IP address or Mac address here
+SERVER_IP = '192.168.1.117' # <-- Put Rasp Pi 5 IP address or Mac address here
 SERVER_URL = f'http://{SERVER_IP}:5000'
 LOCAL_CACHE_DIR = './local_cache'
 if not os.path.exists(LOCAL_CACHE_DIR):
