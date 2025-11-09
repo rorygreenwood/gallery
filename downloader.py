@@ -38,4 +38,7 @@ def download_playlist():
     data = fetch_playlist()
     for item in data:
         filepath = item['filepath']
-        download_image(filepath)
+        try:
+            download_image(filepath)
+        except Exception as e:
+            print(e)
