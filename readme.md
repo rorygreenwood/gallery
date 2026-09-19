@@ -4,3 +4,6 @@ is to have a connection to a remote server.
 
 To access images, each one will have a corresponding record saved in a database.
 Details will also include the ratio of the picture, and thematic info (artist, time, portrait/landscape, etc)
+
+Ensure a directory called 'local_cache' is available.
+Settings are adjusted in the config.yaml file.
