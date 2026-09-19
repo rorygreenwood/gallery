@@ -2,20 +2,23 @@ import logging
 import os
 import random
 import tkinter as tk
+import yaml
 from PIL import Image, ImageTk
 from screeninfo import get_monitors
 
 logger = logging.getLogger()
 
-# --- Optimized Configuration for Pi 5 ---
-VIEW_TIME = 5
-FADE_STEPS = 40  # Lowered for smoother performance on Pi
-FADE_DURATION = 1.5 # Seconds
-LOCAL_CACHE = './local_cache/'
 
 class PiSlideshow:
-    def __init__(self, folder_path, monitor_index):
+    def __init__(self, monitor_index, config):
+        folder_path = config.get('cache-source')
+        view_time = config.get('view_time')
+        fade_steps = config.get('fade_steps')
+        fade_duration = config.get('fade_duration')
+        self.view_time = view_time
         self.folder_path = folder_path
+        self.fade_steps = fade_steps
+        self.fade_duration = fade_duration
         self.all_images = [f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         
         if not self.all_images:
@@ -78,8 +81,8 @@ class PiSlideshow:
 
     def cross_fade(self, old_pil, new_pil, step=0):
         """Blends two images pixel-by-pixel for a smooth transition."""
-        if step <= FADE_STEPS:
-            alpha = step / FADE_STEPS
+        if step <= self.fade_steps:
+            alpha = step / self.fade_steps
             # Core Logic: This replaces the window-level alpha fade
             blended = Image.blend(old_pil, new_pil, alpha)
             
@@ -87,12 +90,12 @@ class PiSlideshow:
             self.image_label.config(image=tk_img)
             self.image_label.image = tk_img # Critical: Keep reference
             
-            delay = int((FADE_DURATION / FADE_STEPS) * 1000)
+            delay = int((self.fade_duration / self.fade_steps) * 1000)
             self.display_window.after(delay, self.cross_fade, old_pil, new_pil, step + 1)
         else:
             self.current_pil = new_pil
             # Wait for VIEW_TIME, then start next cycle
-            self.display_window.after(VIEW_TIME * 1000, self.next_cycle)
+            self.display_window.after(self.view_time * 1000, self.next_cycle)
 
     def next_cycle(self):
         new_pil = self.get_processed_image()
@@ -102,7 +105,7 @@ class PiSlideshow:
             tk_img = ImageTk.PhotoImage(new_pil)
             self.image_label.config(image=tk_img)
             self.image_label.image = tk_img
-            self.display_window.after(VIEW_TIME * 1000, self.next_cycle)
+            self.display_window.after(self.view_time * 1000, self.next_cycle)
         else:
             self.cross_fade(self.current_pil, new_pil)
 
@@ -110,9 +113,18 @@ class PiSlideshow:
         self.next_cycle()
         self.root.mainloop()
 
-def run_slideshow(folder_path, monitor_index):
-    app = PiSlideshow(folder_path, monitor_index)
+def run_slideshow(monitor_index, config):
+    app = PiSlideshow(monitor_index, config)
     app.run()
 
+
+def load_yaml_config():
+    with open('config.yaml', 'r') as y:
+        config = yaml.safe_load(y)
+    return config
+
+
 if __name__ == '__main__':
-    run_slideshow(folder_path='local_cache', monitor_index=0)
+    c = load_yaml_config()
+    print(c)
+    run_slideshow(config=c, monitor_index=0)

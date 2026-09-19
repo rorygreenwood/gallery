@@ -1,0 +1,5 @@
+# --- Optimized Configuration for Pi 5 ---
+cache-source: local_cache
+fade_duration: 3
+fade_steps: 60
+view_time: 15
